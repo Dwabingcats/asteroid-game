@@ -1,5 +1,6 @@
 import asyncio  # Added for browser compatibility
 import random
+from turtle import distance
 import pygame
 
 # 1. Initialize Pygame
@@ -25,13 +26,20 @@ nothrust = pygame.transform.scale(pygame.image.load("assets/jet_nothrust.png"), 
 medthrust = pygame.transform.scale(pygame.image.load("assets/jet_medthrust.png"), (spaceship_width, spaceship_height))
 highthrust = pygame.transform.scale(pygame.image.load("assets/jet_maxthrust.png"), (spaceship_width, spaceship_height))
 
+enemymedthrust = pygame.transform.scale(pygame.image.load("assets/enemy.png"), (spaceship_width, spaceship_height))
+enemyhighthrust = rotated_image = pygame.transform.rotate(pygame.transform.scale(pygame.image.load("assets/enemy turbo.png"), (spaceship_width, spaceship_height)), 20)
+
+
 thrust_state = 0 
+enemy_thrust_state = 0
 
 NUM_ASTEROIDS = 6
 asteroids_shot = 0
 BULLET_SPEED = 10
 SHIP_RADIUS = 20
 START = pygame.math.Vector2(WIDTH / 2, HEIGHT / 2)
+enemystartpos = [(0,random.randint(0, 1400)),(1400,random.randint(0, 1400)),(random.randint(0, 1400),0),(random.randint(0, 1400),1400)]
+ENEMY_START = pygame.math.Vector2(random.choice(enemystartpos))
 compass_center = (WIDTH / 2, HEIGHT / 2)
 
 
@@ -49,6 +57,21 @@ def make_asteroids():
         img = pygame.transform.scale(asteroid_img, (r * 2, r * 2))
         asteroids.append({"pos": pos, "vel": vel, "r": r, "img": img})
     return asteroids
+
+def make_enemy_spaceships():
+    enemy_spaceships = []
+    while len(enemy_spaceships) < NUM_ASTEROIDS:
+        r = random.randint(20, 40)
+        pos = pygame.math.Vector2(random.randint(r, WIDTH - r), random.randint(r, HEIGHT - r))
+        if pos.distance_to(ENEMY_START) < 200:
+            continue
+        vel = pygame.math.Vector2(
+            random.choice([-1, 1]) * random.randint(1, 3),
+            random.choice([-1, 1]) * random.randint(1, 3),
+        )
+        img = pygame.transform.scale(asteroid_img, (r * 2, r * 2))
+        enemy_spaceships.append({"pos": pos, "vel": vel, "r": r, "img": img})
+    return enemy_spaceships
 
 
 def move_asteroids(asteroids):
@@ -88,11 +111,18 @@ async def main():
         global asteroids_shot
         asteroids = make_asteroids()
         bullets = []
+        shoot_cooldown = 0
+        enemy_bullets = []
+        enemy_shoot_cooldown = 0
         position = pygame.math.Vector2(START)
+        enemy_position = pygame.math.Vector2(ENEMY_START)
         angle = 0
+        enemy_angle = 0
         speed = 0
-        shoot_cooldown = 0  # Added to prevent spawning 60 bullets/sec
+        enemy_speed = 2
+        turbo_timer = 100 
         state = "playing"
+
 
         restart = False
         while not restart:
@@ -105,31 +135,65 @@ async def main():
 
             if state == "playing":
                 thrust_state = 0
-                if keys[pygame.K_LEFT]:
+                if keys[pygame.K_a]:
                     angle += 3
-                if keys[pygame.K_RIGHT]:
+                if keys[pygame.K_d]:
                     angle -= 3
-                if keys[pygame.K_UP]:
+                if keys[pygame.K_w]:
                     speed += .5
-                    if keys[pygame.K_LSHIFT] or keys[pygame.K_RSHIFT]:
+                    if keys[pygame.K_LSHIFT]:
                         thrust_state = 2
                         speed += .5
                     else:
                         thrust_state = 1
-                if keys[pygame.K_DOWN]:
+                if keys[pygame.K_s]:
                     speed -= .5
                     thrust_state = 1
 
+                enemy_thrust_state = 0
+                
                 forward = pygame.math.Vector2(0, -1).rotate(-angle)
                 position += forward * speed
                 speed *= 0.98
                 position.x %= WIDTH
                 position.y %= HEIGHT
 
+                enemy_forward = pygame.math.Vector2(0, -1).rotate(-enemy_angle)
+                to_player = position - enemy_position
+                distance = to_player.length()
+                seen = 0 < distance < 300 and enemy_forward.dot(to_player.normalize()) > 0.7
+
+                if seen:
+                    enemy_thrust_state = 1
+                    if distance < 200:
+                        enemy_speed = 2.5
+                    if distance < 100:
+                        state == "lost"
+                    else:
+                        enemy_speed = 1.5
+                else:
+                    enemy_speed = 2
+                    enemy_thrust_state = 0
+                    enemy_angle += random.uniform(-10, 10)
+
+                enemy_position += enemy_forward * enemy_speed
+                enemy_position.x %= WIDTH
+                enemy_position.y %= HEIGHT
+                #enemy_angle = (enemy_position - position).angle_to(pygame.math.Vector2(0, -1))
+
                 shoot_cooldown = max(0, shoot_cooldown - 1)
+                turbo_timer = min(100, turbo_timer + 0.2)    
                 if keys[pygame.K_SPACE] and shoot_cooldown == 0:
-                    bullets.append([pygame.math.Vector2(position), forward * BULLET_SPEED])
-                    shoot_cooldown = 6.7  # Delay frames between shots
+                    if keys[pygame.K_RSHIFT]:
+                        bullets.append([pygame.math.Vector2(position), forward * BULLET_SPEED * 2])
+                        turbo_timer -= 5
+                        shoot_cooldown = 6.7
+                        if turbo_timer <= 0:
+                            turbo_timer = 0
+                            shoot_cooldown = 300 
+                    else:
+                        bullets.append([pygame.math.Vector2(position), forward * BULLET_SPEED])
+                        shoot_cooldown = 6.7
 
                 move_asteroids(asteroids)
 
@@ -163,12 +227,16 @@ async def main():
 
             # Clear screen with background color
             screen.fill(BACKGROUND_COLOR)
-            speed_text = small_font.render(f"speed: {speed:.1f}", True, (255, 255, 255))
+            speed_text = small_font.render(f"speed: {speed:.2f}", True, (255, 255, 255))
             screen.blit(speed_text, (20, 20))
-            angle_text = small_font.render(f"angle: {angle:.1f}", True, (255, 255, 255))
+            angle_text = small_font.render(f"angle: {angle:.2f}", True, (255, 255, 255))
             screen.blit(angle_text, (20, 50))
             counter_text = small_font.render(f"asteroids shot: {asteroids_shot}", True, (255, 255, 255))
             screen.blit(counter_text, (20, 80))
+            shot_cooldown_text = small_font.render(f"shot cooldown: {shoot_cooldown:.2f}", True, (255, 255, 255))
+            screen.blit(shot_cooldown_text, (20, 110))
+            turboshot_cooldown_text = small_font.render(f"turbo shot cooldown: {turbo_timer:.2f}", True, (255, 255, 255))
+            screen.blit(turboshot_cooldown_text, (20, 140))
 
             for a in asteroids:
                 screen.blit(a["img"], (a["pos"].x - a["r"], a["pos"].y - a["r"]))
@@ -185,12 +253,20 @@ async def main():
             rotated_ship = pygame.transform.rotate(spaceship, angle)
             screen.blit(rotated_ship, rotated_ship.get_rect(center=(position.x, position.y)))
 
+
+            if enemy_thrust_state == 0:
+                enemy_spaceship = enemymedthrust
+            elif enemy_thrust_state == 1:
+                enemy_spaceship = enemyhighthrust
+            rotated_ship_enemy = pygame.transform.rotate(enemy_spaceship, enemy_angle)
+            screen.blit(rotated_ship_enemy, rotated_ship_enemy.get_rect(center=(enemy_position.x, enemy_position.y)))           
+
             if state == "won":
                 draw_message("You win!", (80, 220, 120))
             elif state == "lost":
-                draw_message("you got fried :()", (230, 80, 80))
+                draw_message("you got fried :(", (230, 80, 80))
 
-            compass_center = pygame.math.Vector2(200, 200)
+            compass_center = pygame.math.Vector2(200, 250)
             needle_tip = compass_center + forward * 50
             pygame.draw.circle(screen, (200, 200, 200), compass_center, 40, 2)
             pygame.draw.line(screen, (255, 0, 0), compass_center, needle_tip, 3)
