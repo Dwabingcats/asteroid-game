@@ -167,7 +167,7 @@ async def main():
                     if distance < 200:
                         enemy_speed = 2.5
                     if distance < 100:
-                        state == "lost"
+                        state = "lost"
                     else:
                         enemy_speed = 1.5
                 else:
