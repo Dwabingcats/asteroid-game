@@ -1,6 +1,5 @@
 import asyncio  # Added for browser compatibility
 import random
-from turtle import distance
 import pygame
 
 # 1. Initialize Pygame
