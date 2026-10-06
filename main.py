@@ -142,7 +142,7 @@ async def main():
                     speed += .5
                     if keys[pygame.K_LSHIFT]:
                         thrust_state = 2
-                        speed += .5
+                        speed += .2
                     else:
                         thrust_state = 1
                 if keys[pygame.K_s]:
@@ -164,16 +164,21 @@ async def main():
 
                 if seen:
                     enemy_thrust_state = 1
+                    enemy_shoot_cooldown = max(0, enemy_shoot_cooldown - 1)
+                    enemy_angle = (enemy_position - position).angle_to(pygame.math.Vector2(0, 1))
                     if distance < 200:
-                        enemy_speed = 2.5
-                    if distance < 100:
+                        if turbo
+                        enemy_speed = 10
+                    if distance < 40:
                         state = "lost"
                     else:
-                        enemy_speed = 1.5
+                        enemy_bullets.append([pygame.math.Vector2(enemy_position), enemy_forward * BULLET_SPEED])
+                        enemy_shoot_cooldown = 6.7
+                        enemy_speed = 5
                 else:
                     enemy_speed = 2
                     enemy_thrust_state = 0
-                    enemy_angle += random.uniform(-10, 10)
+                    enemy_angle += random.uniform(-2, 2)
 
                 enemy_position += enemy_forward * enemy_speed
                 enemy_position.x %= WIDTH
