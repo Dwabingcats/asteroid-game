@@ -160,13 +160,13 @@ async def main():
                 enemy_forward = pygame.math.Vector2(0, -1).rotate(-enemy_angle)
                 to_player = position - enemy_position
                 distance = to_player.length()
-                seen = 0 < distance < 300 and enemy_forward.dot(to_player.normalize()) > 0.7
+                seen = 0 < distance < 500 and enemy_forward.dot(to_player.normalize()) > 0.7
 
                 if seen:
                     enemy_thrust_state = 1
                     enemy_shoot_cooldown = max(0, enemy_shoot_cooldown - 1)
                     enemy_angle = (enemy_position - position).angle_to(pygame.math.Vector2(0, 1))
-                    if distance < 200:
+                    if distance < 400:
                         enemy_speed = 12
                     if distance < 40:
                         state = "lost"
