@@ -135,18 +135,18 @@ async def main():
             if state == "playing":
                 thrust_state = 0
                 if keys[pygame.K_a]:
-                    angle += 3
+                    angle += 2
                 if keys[pygame.K_d]:
-                    angle -= 3
+                    angle -= 2
                 if keys[pygame.K_w]:
-                    speed += .5
+                    speed += .2
                     if keys[pygame.K_LSHIFT]:
                         thrust_state = 2
-                        speed += .2
+                        speed += .1
                     else:
                         thrust_state = 1
                 if keys[pygame.K_s]:
-                    speed -= .5
+                    speed -= .2
                     thrust_state = 1
 
                 enemy_thrust_state = 0
@@ -167,14 +167,13 @@ async def main():
                     enemy_shoot_cooldown = max(0, enemy_shoot_cooldown - 1)
                     enemy_angle = (enemy_position - position).angle_to(pygame.math.Vector2(0, 1))
                     if distance < 200:
-                        if turbo
-                        enemy_speed = 10
+                        enemy_speed = 12
                     if distance < 40:
                         state = "lost"
                     else:
                         enemy_bullets.append([pygame.math.Vector2(enemy_position), enemy_forward * BULLET_SPEED])
                         enemy_shoot_cooldown = 6.7
-                        enemy_speed = 5
+                        enemy_speed = 7
                 else:
                     enemy_speed = 2
                     enemy_thrust_state = 0
@@ -265,6 +264,10 @@ async def main():
             rotated_ship_enemy = pygame.transform.rotate(enemy_spaceship, enemy_angle)
             screen.blit(rotated_ship_enemy, rotated_ship_enemy.get_rect(center=(enemy_position.x, enemy_position.y)))           
 
+
+            if asteroids_shot >= 67:
+                state = "won"
+            
             if state == "won":
                 draw_message("You win!", (80, 220, 120))
             elif state == "lost":
