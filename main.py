@@ -1,4 +1,4 @@
-import asyncio  # Added for browser compatibility
+import asyncio
 import random
 import pygame
 
