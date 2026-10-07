@@ -32,12 +32,12 @@ enemyhighthrust = rotated_image = pygame.transform.rotate(pygame.transform.scale
 thrust_state = 0 
 enemy_thrust_state = 0
 
-NUM_ASTEROIDS = 6
+NUM_ASTEROIDS = 8
 asteroids_shot = 0
 BULLET_SPEED = 10
 SHIP_RADIUS = 20
 START = pygame.math.Vector2(WIDTH / 2, HEIGHT / 2)
-enemystartpos = [(0,random.randint(0, 1400)),(1400,random.randint(0, 1400)),(random.randint(0, 1400),0),(random.randint(0, 1400),1400)]
+enemystartpos = [(1400,random.randint(0, 1400)),(random.randint(0, 1400),0),(random.randint(0, 1400),1400)]
 ENEMY_START = pygame.math.Vector2(random.choice(enemystartpos))
 compass_center = (WIDTH / 2, HEIGHT / 2)
 
@@ -45,7 +45,7 @@ compass_center = (WIDTH / 2, HEIGHT / 2)
 def make_asteroids():
     asteroids = []
     while len(asteroids) < NUM_ASTEROIDS:
-        r = random.randint(20, 40)
+        r = random.randint(20, 60)
         pos = pygame.math.Vector2(random.randint(r, WIDTH - r), random.randint(r, HEIGHT - r))
         if pos.distance_to(START) < 200:
             continue
@@ -118,7 +118,7 @@ async def main():
         angle = 0
         enemy_angle = 0
         speed = 0
-        enemy_speed = 2
+        enemy_speed = 8
         turbo_timer = 100 
         state = "playing"
 
@@ -167,7 +167,7 @@ async def main():
                     enemy_shoot_cooldown = max(0, enemy_shoot_cooldown - 1)
                     enemy_angle = (enemy_position - position).angle_to(pygame.math.Vector2(0, 1))
                     if distance < 400:
-                        enemy_speed = 12
+                        enemy_speed = 15
                     if distance < 40:
                         state = "lost"
                     else:
@@ -175,9 +175,9 @@ async def main():
                         enemy_shoot_cooldown = 6.7
                         enemy_speed = 7
                 else:
-                    enemy_speed = 2
+                    enemy_speed = 5
                     enemy_thrust_state = 0
-                    enemy_angle += random.uniform(-2, 2)
+                    enemy_angle += random.uniform(-5, 5)
 
                 enemy_position += enemy_forward * enemy_speed
                 enemy_position.x %= WIDTH
@@ -226,6 +226,7 @@ async def main():
                         state = "lost"
 
             elif keys[pygame.K_r]:
+                asteroids_shot = 0
                 restart = True
 
             # Clear screen with background color
